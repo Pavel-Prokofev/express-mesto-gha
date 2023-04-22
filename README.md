@@ -1,6 +1,11 @@
 [![Tests](../../actions/workflows/tests-13-sprint.yml/badge.svg)](../../actions/workflows/tests-13-sprint.yml) [![Tests](../../actions/workflows/tests-14-sprint.yml/badge.svg)](../../actions/workflows/tests-14-sprint.yml)
 # Проект Mesto фронтенд + бэкенд
 
+Реализация компоненты бэкэнда, проекта Mesto, в рамках учебного процесса на Яндекс Практикум.
+
+## Ссылка на проект
+
+https://github.com/Pavel-Prokofev/express-mesto-gha
 
 ## Директории
 
@@ -14,3 +19,8 @@
 
 `npm run start` — запускает сервер   
 `npm run dev` — запускает сервер с hot-reload
+
+## Используемые технологии 
+
+Node.js
+база данных MongoDB
