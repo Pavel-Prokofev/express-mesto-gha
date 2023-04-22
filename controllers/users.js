@@ -60,7 +60,7 @@ const userDataChange = (req, res) => {
       err.name = 'NotFound';
       throw err;
     })
-    .then((user) => res.status(statusAllGood).send(user.avatar))
+    .then((user) => res.status(statusAllGood).send({ name: user.name, about: user.about }))
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(statusCastError).send({ message: messageCastErrorId });
@@ -83,7 +83,7 @@ const userAvatarChange = (req, res) => {
       err.name = 'NotFound';
       throw err;
     })
-    .then((user) => res.status(statusAllGood).send(user.avatar))
+    .then((user) => res.status(statusAllGood).send({ avatar: user.avatar }))
     .catch((err) => {
       if (err.name === 'NotFound') {
         res.status(statusNotFoundError).send({ message: err.message });
