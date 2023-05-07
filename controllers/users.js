@@ -20,7 +20,15 @@ const createUser = (req, res, next) => {
       .then((hash) => User.create({
         name, about, avatar, email, password: hash,
       }))
-      .then(() => res.status(statusCreatingOk).send({ message: 'регистрация прошла успешно' }))
+      .then((newUser) => {
+        res.status(statusCreatingOk).send({
+          name: newUser.name,
+          about: newUser.about,
+          avatar: newUser.avatar,
+          email: newUser.email,
+          _id: newUser._id,
+        });
+      })
       .catch(next);
   }
 };
