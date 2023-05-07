@@ -2,8 +2,7 @@ const { celebrate, Joi } = require('celebrate');
 const isURL = require('validator/lib/isURL');
 
 const checkUrl = (url) => {
-  if (isURL(url)) { console.log(url);
-    return url; }
+  if (isURL(url)) { return url; }
   throw new Error('Невалидный URL.');
 };
 
