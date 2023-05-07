@@ -8,7 +8,7 @@ const {
   identificationError,
 } = require('./utils/errors');
 
-const usersRouter = require('./routes/users');
+const { usersRouter, usersRouterSign } = require('./routes/users');
 const cardsRouter = require('./routes/cards');
 const auth = require('./middlewares/auth');
 
@@ -22,8 +22,11 @@ mongoose.connect('mongodb://127.0.0.1/mestodb')
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use('/', usersRouterSign);
+app.use(auth);
 app.use('/users', usersRouter);
-app.use('/cards', auth, cardsRouter);
+app.use('/cards', cardsRouter);
 app.use('*', (req, res, next) => {
   next(orFailFunction('NotFoundUrl'));
 });

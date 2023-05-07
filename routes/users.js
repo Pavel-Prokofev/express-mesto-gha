@@ -1,6 +1,6 @@
 const usersRouter = require('express').Router();
+const usersRouterSign = require('express').Router();
 
-const auth = require('../middlewares/auth');
 const {
   login,
   createUser,
@@ -18,11 +18,9 @@ const {
   userAvatarChangeValidation,
 } = require('../middlewares/validationJoi');
 
-usersRouter.post('/signup', createUserValidation, createUser);
+usersRouterSign.post('/signup', createUserValidation, createUser);
 
-usersRouter.post('/signin', loginValidation, login);
-
-usersRouter.use(auth);
+usersRouterSign.post('/signin', loginValidation, login);
 
 usersRouter.get('/', returnAllUsers);
 
@@ -34,4 +32,7 @@ usersRouter.patch('/me', userDataChangeValidation, userDataChange);
 
 usersRouter.patch('/me/avatar', userAvatarChangeValidation, userAvatarChange);
 
-module.exports = usersRouter;
+module.exports = {
+  usersRouter,
+  usersRouterSign,
+};
