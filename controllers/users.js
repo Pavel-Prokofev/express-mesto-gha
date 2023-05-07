@@ -1,105 +1,81 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const User = require('../models/user');
 const {
-  statusAllGood,
   statusCreatingOk,
-  statusValidationError,
-  messageValidationErrorData,
-  statusCastError,
-  messageCastErrorId,
-  statusNotFoundError,
-  messageNotFoundError,
-  statusServerError,
-  messageServerError,
-} = require('../utils/errorConstants');
+  orFailFunction,
+} = require('../utils/errors');
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((newUser) => res.status(statusCreatingOk).send(newUser))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(statusValidationError).send({ message: messageValidationErrorData });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  if (password.length < 7) {
+    const err = new Error();
+    err.name = 'ValidationError';
+    throw err;
+  } else {
+    bcrypt.hash(password, 10)
+      .then((hash) => User.create({
+        name, about, avatar, email, password: hash,
+      }))
+      .then((newUser) => res.status(statusCreatingOk).send(newUser))
+      .catch(next);
+  }
 };
 
-const returnAllUsers = (req, res) => {
-  User.find({})
-    .then((allUsers) => res.status(statusAllGood).send(allUsers))
-    .catch(() => res.status(statusServerError).send({ message: messageServerError }));
-};
-
-const returnUserById = (req, res) => {
-  User.findById(req.params.userId)
-    .orFail(() => {
-      const err = new Error(messageNotFoundError);
-      err.statusCode = statusNotFoundError;
-      err.name = 'NotFound';
-      throw err;
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials({ email, password })
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-superSecret-key', { expiresIn: '7d' });
+      res.send({ token });
     })
-    .then((user) => res.status(statusAllGood).send(user))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(statusCastError).send({ message: messageCastErrorId });
-      } else if (err.name === 'NotFound') {
-        res.status(statusNotFoundError).send({ message: err.message });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+    .catch(next);
 };
 
-const userDataChange = (req, res) => {
+const returnAllUsers = (req, res, next) => {
+  User.find({})
+    .then((allUsers) => res.send(allUsers))
+    .catch(next);
+};
+
+const returnThisUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then((user) => res.send(user))
+    .catch(next);
+};
+
+const returnUserById = (req, res, next) => {
+  User.findById(req.params.userId)
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then((user) => res.send(user))
+    .catch(next);
+};
+
+const userDataChange = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
-    .orFail(() => {
-      const err = new Error(messageNotFoundError);
-      err.statusCode = statusNotFoundError;
-      err.name = 'NotFound';
-      throw err;
-    })
-    .then((user) => res.status(statusAllGood).send({ name: user.name, about: user.about }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(statusCastError).send({ message: messageCastErrorId });
-      } else if (err.name === 'NotFound') {
-        res.status(statusNotFoundError).send({ message: err.message });
-      } else if (err.name === 'ValidationError') {
-        res.status(statusValidationError).send({ message: messageValidationErrorData });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then((user) => res.send({ name: user.name, about: user.about }))
+    .catch(next);
 };
 
-const userAvatarChange = (req, res) => {
+const userAvatarChange = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-    .orFail(() => {
-      const err = new Error(messageNotFoundError);
-      err.statusCode = statusNotFoundError;
-      err.name = 'NotFound';
-      throw err;
-    })
-    .then((user) => res.status(statusAllGood).send({ avatar: user.avatar }))
-    .catch((err) => {
-      if (err.name === 'NotFound') {
-        res.status(statusNotFoundError).send({ message: err.message });
-      } else if (err.name === 'CastError') {
-        res.status(statusCastError).send({ message: messageCastErrorId });
-      } else if (err.name === 'ValidationError') {
-        res.status(statusValidationError).send({ message: messageValidationErrorData });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then((user) => res.send({ avatar: user.avatar }))
+    .catch(next);
 };
 
 module.exports = {
+  login,
   createUser,
   returnAllUsers,
+  returnThisUser,
   returnUserById,
   userDataChange,
   userAvatarChange,

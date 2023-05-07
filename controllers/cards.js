@@ -1,107 +1,57 @@
 const Card = require('../models/card');
 const {
-  statusAllGood,
   statusCreatingOk,
-  statusValidationError,
-  messageValidationErrorData,
-  statusCastError,
-  messageCastErrorId,
-  statusNotFoundError,
-  messageNotFoundError,
-  statusServerError,
-  messageServerError,
-} = require('../utils/errorConstants');
+  orFailFunction,
+} = require('../utils/errors');
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((newCard) => res.status(statusCreatingOk).send(newCard))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(statusValidationError).send({ message: messageValidationErrorData });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+    .catch(next);
 };
 
-const returnAllCards = (req, res) => {
+const returnAllCards = (req, res, next) => {
   Card.find({})
-    .then((allCards) => res.status(statusAllGood).send(allCards))
-    .catch(() => res.status(statusServerError).send({ message: messageServerError }));
+    .then((allCards) => res.send(allCards))
+    .catch(next);
 };
 
-const dellCardById = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .orFail(() => {
-      const err = new Error(messageNotFoundError);
-      err.statusCode = statusNotFoundError;
-      err.name = 'NotFound';
-      throw err;
-    })
-    .then(() => res.status(statusAllGood).send({ message: 'Карточка удалена.' }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(statusCastError).send({ message: messageCastErrorId });
-      } else if (err.name === 'NotFound') {
-        res.status(statusNotFoundError).send({ message: err.message });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
+const dellCardById = (req, res, next) => {
+  Card.findOne({ _id: req.params.cardId })
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then((card) => {
+      if (card.owner.toString() !== req.user._id) {
+        throw orFailFunction('Forbidden');
       }
-    });
+      return Card.deleteOne(card)
+        .then(() => res.send({ message: 'Карточка удалена.' }))
+        .catch(next);
+    })
+    .catch(next);
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => {
-      const err = new Error(messageNotFoundError);
-      err.statusCode = statusNotFoundError;
-      err.name = 'NotFound';
-      throw err;
-    })
-    .then(() => res.status(statusAllGood).send({ message: 'Лайк добавлен' }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(statusCastError).send({ message: messageCastErrorId });
-      } else if (err.name === 'NotFound') {
-        res.status(statusNotFoundError).send({ message: err.message });
-      } else if (err.name === 'ValidationError') {
-        res.status(statusValidationError).send({ message: messageValidationErrorData });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then(() => res.send({ message: 'Лайк добавлен' }))
+    .catch(next);
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => {
-      const err = new Error(messageNotFoundError);
-      err.statusCode = statusNotFoundError;
-      err.name = 'NotFound';
-      throw err;
-    })
-    .then(() => res.status(statusAllGood).send({ message: 'Лайк удалён' }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(statusCastError).send({ message: messageCastErrorId });
-      } else if (err.name === 'NotFound') {
-        res.status(statusNotFoundError).send({ message: err.message });
-      } else if (err.name === 'ValidationError') {
-        res.status(statusValidationError).send({ message: messageValidationErrorData });
-      } else {
-        res.status(statusServerError).send({ message: messageServerError });
-      }
-    });
+    .orFail(() => { throw orFailFunction('NotFound'); })
+    .then(() => res.send({ message: 'Лайк удалён' }))
+    .catch(next);
 };
 
 module.exports = {

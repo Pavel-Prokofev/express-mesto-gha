@@ -1,11 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const { errors } = require('celebrate');
 
-const { statusNotFoundError } = require('./utils/errorConstants');
+const {
+  orFailFunction,
+  identificationError,
+} = require('./utils/errors');
 
 const usersRouter = require('./routes/users');
 const cardsRouter = require('./routes/cards');
+const auth = require('./middlewares/auth');
 
 const { PORT = 3000 } = process.env;
 
@@ -17,16 +22,18 @@ mongoose.connect('mongodb://127.0.0.1/mestodb')
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  req.user = {
-    _id: '64405412ba9737fcab3ed86c',
-  };
-  next();
-});
 app.use('/users', usersRouter);
-app.use('/cards', cardsRouter);
-app.use('*', (req, res) => {
-  res.status(statusNotFoundError).send({ message: 'Неверный URl запроса.' });
+app.use('/cards', auth, cardsRouter);
+app.use('*', (req, res, next) => {
+  next(orFailFunction('NotFoundUrl'));
+});
+
+app.use(errors());
+
+app.use((err, req, res, next) => {
+  const currentErr = identificationError(err);
+  res.status(currentErr.statusCode).send({ message: currentErr.message });
+  next();
 });
 
 app.listen(PORT, (err) => {
