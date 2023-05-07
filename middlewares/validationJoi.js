@@ -1,10 +1,17 @@
 const { celebrate, Joi } = require('celebrate');
+const isURL = require('validator/lib/isURL');
+
+const checkUrl = (url) => {
+  if (isURL(url)) { console.log(url);
+    return url; }
+  throw new Error('Невалидный URL.');
+};
 
 const createUserValidation = celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().uri(),
+    avatar: Joi.string().custom(checkUrl),
     email: Joi.string().required().email(),
     password: Joi.string().required().min(7),
   }),
@@ -32,14 +39,14 @@ const userDataChangeValidation = celebrate({
 
 const userAvatarChangeValidation = celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().uri(),
+    avatar: Joi.string().custom(checkUrl),
   }),
 });
 
 const createCardValidation = celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).required(),
-    link: Joi.string().uri().required(),
+    link: Joi.string().custom(checkUrl).required(),
   }),
 });
 
