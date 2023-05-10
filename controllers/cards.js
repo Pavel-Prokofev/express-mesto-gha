@@ -2,7 +2,7 @@ const Card = require('../models/card');
 const {
   statusCreatingOk,
   orFailFunction,
-} = require('../utils/errors');
+} = require('../utils/errorsHandler');
 
 const createCard = (req, res, next) => {
   const { name, link } = req.body;

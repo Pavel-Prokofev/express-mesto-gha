@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const isEmail = require('validator/lib/isEmail');
 const bcrypt = require('bcryptjs');
+const {
+  orFailFunction,
+} = require('../utils/errorsHandler');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -43,15 +46,11 @@ userSchema.statics.findUserByCredentials = function ({ email, password }) {
   return this.findOne({ email }).select('+password')
     .then(async (user) => {
       if (!user) {
-        const err = new Error();
-        err.name = 'InvalidAuthorization';
-        return Promise.reject(err);
+        return Promise.reject(orFailFunction('InvalidAuthorization'));
       }
       const matched = await bcrypt.compare(password, user.password);
       if (!matched) {
-        const err = new Error();
-        err.name = 'InvalidAuthorization';
-        return Promise.reject(err);
+        return Promise.reject(orFailFunction('InvalidAuthorization'));
       }
       return user;
     });

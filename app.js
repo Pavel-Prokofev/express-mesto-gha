@@ -6,7 +6,7 @@ const { errors } = require('celebrate');
 const {
   orFailFunction,
   identificationError,
-} = require('./utils/errors');
+} = require('./utils/errorsHandler');
 
 const { usersRouter, usersRouterSign } = require('./routes/users');
 const cardsRouter = require('./routes/cards');
@@ -34,8 +34,14 @@ app.use('*', (req, res, next) => {
 app.use(errors());
 
 app.use((err, req, res, next) => {
-  const currentErr = identificationError(err);
-  res.status(currentErr.statusCode).send({ message: currentErr.message });
+  const { statusCode = 500, message } = identificationError(err);
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка.'
+        : message,
+    });
   next();
 });
 

@@ -5,7 +5,7 @@ const User = require('../models/user');
 const {
   statusCreatingOk,
   orFailFunction,
-} = require('../utils/errors');
+} = require('../utils/errorsHandler');
 
 const createUser = (req, res, next) => {
   const {
